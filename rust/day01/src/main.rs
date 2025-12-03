@@ -1,17 +1,31 @@
 fn main() {
     let input = include_str!("../../../inputs/day01.txt");
-
-    println!("Part 1: {}", part1(input));
-}
-
-fn part1(input: &str) -> i32 {
     let rotations = parse_rotations(input);
 
+    println!("Part 1: {}", part1(&rotations));
+    println!("Part 2: {}", part2(&rotations));
+}
+
+fn part1(rotations: &[Rotation]) -> i32 {
     let mut curr_position = 50;
     let mut password = 0;
+
     for rotation in rotations.iter() {
-        curr_position = rotation.move_from(curr_position);
+        (curr_position, _) = rotation.move_from(curr_position);
         password += i32::from(curr_position == 0);
+    }
+
+    password
+}
+
+fn part2(rotations: &[Rotation]) -> i32 {
+    let mut curr_position = 50;
+    let mut password = 0;
+
+    for rotation in rotations.iter() {
+        let (next_position, count) = rotation.move_from(curr_position);
+        curr_position = next_position;
+        password += count;
     }
 
     password
@@ -30,10 +44,20 @@ struct Rotation {
 }
 
 impl Rotation {
-    fn move_from(&self, position: i32) -> i32 {
+    fn move_from(&self, position: i32) -> (i32, i32) {
         match self.direction {
-            Direction::Left => (position - self.distance) % 100,
-            Direction::Right => (position + self.distance) % 100,
+            Direction::Left => {
+                let reversed = (100 - position) % 100;
+
+                (
+                    (position - self.distance).rem_euclid(100),
+                    (reversed + self.distance) / 100,
+                )
+            }
+            Direction::Right => (
+                (position + self.distance) % 100,
+                (position + self.distance) / 100,
+            ),
         }
     }
 }
@@ -61,9 +85,7 @@ fn parse_rotations(input: &str) -> Vec<Rotation> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_part1() {
-        let input = "L68
+    const INPUT: &str = "L68
 L30
 R48
 L5
@@ -74,6 +96,15 @@ L99
 R14
 L82";
 
-        assert_eq!(part1(input), 3);
+    #[test]
+    fn test_part1() {
+        let rotations = parse_rotations(INPUT);
+        assert_eq!(part1(&rotations), 3);
+    }
+
+    #[test]
+    fn test_part2() {
+        let rotations = parse_rotations(INPUT);
+        assert_eq!(part2(&rotations), 6);
     }
 }
