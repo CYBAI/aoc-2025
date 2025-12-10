@@ -1,8 +1,9 @@
 fn main() {
     let input = include_str!("../../../inputs/day04.txt");
-    let grid = parse_grid(input);
+    let mut grid = parse_grid(input);
 
     println!("Part 1: {}", part1(&grid));
+    println!("Part 2: {}", part2(&mut grid));
 }
 
 fn parse_grid(input: &str) -> Vec<Vec<char>> {
@@ -13,10 +14,32 @@ fn parse_grid(input: &str) -> Vec<Vec<char>> {
 }
 
 fn part1(grid: &[Vec<char>]) -> u32 {
+    find_accessible_positions(grid).len() as u32
+}
+
+fn part2(grid: &mut [Vec<char>]) -> u32 {
+    let mut count = 0;
+
+    loop {
+        let pos = find_accessible_positions(grid);
+        if pos.is_empty() {
+            break;
+        }
+
+        count += pos.len() as u32;
+
+        for (r, c) in pos.iter() {
+            grid[*r][*c] = '.';
+        }
+    }
+
+    count
+}
+
+fn find_accessible_positions(grid: &[Vec<char>]) -> Vec<(usize, usize)> {
     let m = grid.len();
     let n = grid[0].len();
-
-    let mut count = 0;
+    let mut positions = Vec::new();
 
     for i in 0..m {
         for j in 0..n {
@@ -25,12 +48,12 @@ fn part1(grid: &[Vec<char>]) -> u32 {
             }
 
             if is_forklift_accessible(grid, (i, j)) {
-                count += 1;
+                positions.push((i, j));
             }
         }
     }
 
-    count
+    positions
 }
 
 fn is_forklift_accessible(grid: &[Vec<char>], curr_coord: (usize, usize)) -> bool {
@@ -83,5 +106,11 @@ mod tests {
     fn test_part1() {
         let grid = parse_grid(INPUT);
         assert_eq!(part1(&grid), 13);
+    }
+
+    #[test]
+    fn test_part2() {
+        let mut grid = parse_grid(INPUT);
+        assert_eq!(part2(&mut grid), 43);
     }
 }
