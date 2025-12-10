@@ -1,36 +1,56 @@
 fn main() {
     let input = include_str!("../../../inputs/day03.txt");
+    let banks = parse(input);
 
-    println!("Part 1: {}", part1(input));
+    println!("Part 1: {}", part1(&banks));
+    println!("Part 2: {}", part2(&banks));
 }
 
-fn part1(input: &str) -> u64 {
+fn parse(input: &str) -> Vec<Vec<u64>> {
     input
         .trim()
         .lines()
         .map(|line| {
-            let nums = line
-                .chars()
+            line.chars()
                 .map(|c| c.to_digit(10).unwrap() as u64)
-                .collect::<Vec<u64>>();
-
-            find_largest_joltage(&nums)
+                .collect::<Vec<u64>>()
         })
+        .collect::<Vec<Vec<u64>>>()
+}
+
+fn part1(input: &[Vec<u64>]) -> u64 {
+    input.iter().map(|nums| find_largest_joltage(nums, 2)).sum()
+}
+
+fn part2(input: &[Vec<u64>]) -> u64 {
+    input
+        .iter()
+        .map(|nums| find_largest_joltage(nums, 12))
         .sum()
 }
 
-fn find_largest_joltage(batteries: &[u64]) -> u64 {
+fn find_largest_joltage(batteries: &[u64], digits: usize) -> u64 {
     let len = batteries.len();
 
-    let Some((max_index, ten)) = find_max(batteries, 0..(len - 1)) else {
+    if digits == 0 || len < digits {
         return 0;
-    };
+    }
 
-    let Some((_, unit)) = find_max(batteries, ((max_index + 1)..len).rev()) else {
-        return 0;
-    };
+    let mut start = 0;
+    let mut chosen: Vec<(usize, u64)> = Vec::new();
 
-    ten * 10 + unit
+    for i in 0..digits {
+        let end_inclusive = len - (digits - i);
+
+        let Some((idx, val)) = find_max(batteries, start..=end_inclusive) else {
+            return 0;
+        };
+
+        chosen.push((idx, val));
+        start = idx + 1;
+    }
+
+    chosen.iter().fold(0, |acc, (_, n)| acc * 10 + n)
 }
 
 fn find_max(nums: &[u64], range: impl Iterator<Item = usize>) -> Option<(usize, u64)> {
@@ -63,6 +83,13 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(INPUT), 357);
+        let banks = parse(INPUT);
+        assert_eq!(part1(&banks), 357);
+    }
+
+    #[test]
+    fn test_part2() {
+        let banks = parse(INPUT);
+        assert_eq!(part2(&banks), 3121910778619);
     }
 }
