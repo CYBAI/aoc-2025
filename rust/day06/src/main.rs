@@ -2,21 +2,25 @@ use std::iter::zip;
 
 fn main() {
     let input = include_str!("../../../inputs/day06.txt");
-    let (nums, ops) = parse(input);
 
-    println!("Part 1: {}", part1(&nums, &ops));
+    println!("Part 1: {}", part1(parse(input)));
 }
 
-fn part1(nums: &[Vec<u64>], ops: &[Operator]) -> u64 {
-    let transposed: Vec<Vec<u64>> = transpose(nums.to_vec());
+fn part1(math_problems: MathProblems) -> u64 {
+    let MathProblems { columns } = math_problems;
 
-    zip(transposed.iter(), ops)
-        .into_iter()
-        .map(|(col, op)| col.iter().fold(op.mempty(), |acc, &n| op.calc(acc, n)))
+    columns
+        .iter()
+        .map(|col| {
+            col.raw_nums
+                .iter()
+                .map(|xs| xs.trim().parse().unwrap())
+                .fold(col.op.mempty(), |acc, n| col.op.calc(acc, n))
+        })
         .sum()
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum Operator {
     Add,
     Mul,
@@ -46,48 +50,67 @@ impl Operator {
     }
 }
 
-fn parse(input: &str) -> (Vec<Vec<u64>>, Vec<Operator>) {
-    let mut nums = vec![];
-    let mut ops = vec![];
-
-    for line in input.trim().lines() {
-        let line = line.trim();
-        if let Some(c) = line.chars().next()
-            && c.is_digit(10)
-        {
-            let row = line
-                .split_whitespace()
-                .map(|num| num.parse().unwrap())
-                .collect::<Vec<u64>>();
-            nums.push(row);
-        } else {
-            ops = line
-                .chars()
-                .filter_map(|c| Operator::from_char(c))
-                .collect::<Vec<Operator>>();
-        }
-    }
-
-    (nums, ops)
+#[derive(Debug)]
+struct Column {
+    width: usize,
+    op: Operator,
+    raw_nums: Vec<String>,
 }
 
-fn transpose(matrix: Vec<Vec<u64>>) -> Vec<Vec<u64>> {
-    let mut iter = matrix.into_iter();
+struct MathProblems {
+    columns: Vec<Column>,
+}
 
-    let first = match iter.next() {
-        Some(row) => row,
-        None => return vec![],
-    };
+fn parse(input: &str) -> MathProblems {
+    let input = input.trim_start();
 
-    let mut acc: Vec<Vec<u64>> = first.into_iter().map(|x| vec![x]).collect();
+    let mut columns = initialize_columns(input.lines().last().unwrap());
+    let widths = columns.iter().map(|col| col.width).collect::<Vec<usize>>();
 
-    for row in iter {
-        for (col, item) in zip(&mut acc, row) {
-            col.push(item);
+    for line in input.lines().take(input.lines().count() - 1) {
+        let mut start = 0;
+        for (col, &width) in zip(&mut columns, &widths) {
+            let end = start + width;
+            col.raw_nums.push(line[start..end].to_string());
+            start = end + 1;
         }
     }
 
-    acc
+    MathProblems { columns }
+}
+
+fn initialize_columns(ops_line: &str) -> Vec<Column> {
+    let mut columns = vec![];
+
+    let mut chars = ops_line.chars().peekable();
+    while let Some(c) = chars.next() {
+        if let Some(op) = Operator::from_char(c) {
+            let mut current_width = 1;
+            let mut found_next_op = false;
+
+            while let Some(&next_char) = chars.peek() {
+                if next_char.is_whitespace() {
+                    current_width += 1;
+                    chars.next();
+                } else {
+                    found_next_op = true;
+                    break;
+                }
+            }
+
+            columns.push(Column {
+                width: if found_next_op {
+                    current_width - 1
+                } else {
+                    current_width
+                },
+                op,
+                raw_nums: vec![],
+            });
+        }
+    }
+
+    columns
 }
 
 #[cfg(test)]
@@ -102,7 +125,6 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        let (nums, ops) = parse(INPUT);
-        assert_eq!(part1(&nums, &ops), 4277556);
+        assert_eq!(part1(parse(INPUT)), 4277556);
     }
 }
