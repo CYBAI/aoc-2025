@@ -2,11 +2,13 @@ use std::iter::zip;
 
 fn main() {
     let input = include_str!("../../../inputs/day06.txt");
+    let math_problems = parse(input);
 
-    println!("Part 1: {}", part1(parse(input)));
+    println!("Part 1: {}", part1(&math_problems));
+    println!("Part 2: {}", part2(&math_problems));
 }
 
-fn part1(math_problems: MathProblems) -> u64 {
+fn part1(math_problems: &MathProblems) -> u64 {
     let MathProblems { columns } = math_problems;
 
     columns
@@ -16,6 +18,28 @@ fn part1(math_problems: MathProblems) -> u64 {
                 .iter()
                 .map(|xs| xs.trim().parse().unwrap())
                 .fold(col.op.mempty(), |acc, n| col.op.calc(acc, n))
+        })
+        .sum()
+}
+
+fn part2(math_problems: &MathProblems) -> u64 {
+    let MathProblems { columns } = math_problems;
+
+    columns
+        .iter()
+        .map(|col| {
+            transpose(
+                col.raw_nums
+                    .iter()
+                    .map(|s| s.chars().collect::<Vec<char>>()),
+            )
+            .iter()
+            .map(|cs| {
+                let raw_num = cs.iter().collect::<String>();
+                let raw_num = raw_num.trim();
+                raw_num.parse::<u64>().unwrap()
+            })
+            .fold(col.op.mempty(), |acc, n| col.op.calc(acc, n))
         })
         .sum()
 }
@@ -113,6 +137,23 @@ fn initialize_columns(ops_line: &str) -> Vec<Column> {
     columns
 }
 
+fn transpose<T>(mut iter: impl Iterator<Item = Vec<T>>) -> Vec<Vec<T>> {
+    let first = match iter.next() {
+        Some(row) => row,
+        None => return vec![],
+    };
+
+    let mut acc: Vec<Vec<T>> = first.into_iter().map(|x| vec![x]).collect();
+
+    for row in iter {
+        for (col, item) in zip(&mut acc, row) {
+            col.push(item);
+        }
+    }
+
+    acc
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,6 +166,11 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(part1(parse(INPUT)), 4277556);
+        assert_eq!(part1(&parse(INPUT)), 4277556);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(part2(&parse(INPUT)), 3263827);
     }
 }
