@@ -77,11 +77,10 @@ fn is_forklift_accessible(grid: &[Vec<char>], curr_coord: (usize, usize)) -> boo
         let r = row as isize + dr;
         let c = col as isize + dc;
 
-        if r >= 0 && r < m as isize && c >= 0 && c < n as isize {
-            if grid[r as usize][c as usize] == '@' {
+        if r >= 0 && r < m as isize && c >= 0 && c < n as isize
+            && grid[r as usize][c as usize] == '@' {
                 count += 1;
             }
-        }
     }
 
     count < 4
