@@ -51,12 +51,11 @@ fn parse(input: &str) -> Database {
     let merged_fresh_ranges = raw_ranges
         .into_iter()
         .fold(Vec::<Range>::new(), |mut acc, r| {
-            if let Some(last) = acc.last_mut() {
-                if r.start <= last.end {
+            if let Some(last) = acc.last_mut()
+                && r.start <= last.end {
                     last.end = last.end.max(r.end);
                     return acc;
                 }
-            }
             acc.push(r);
             acc
         });
