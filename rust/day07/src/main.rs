@@ -5,6 +5,7 @@ fn main() {
     let teleporter = parse(input);
 
     println!("Part 1: {}", part1(&teleporter));
+    println!("Part 2: {}", part2(&teleporter));
 }
 
 type Coord = (usize, usize);
@@ -80,6 +81,43 @@ fn part1(teleporter: &Teleporter) -> usize {
     count
 }
 
+fn part2(teleporter: &Teleporter) -> usize {
+    let (curr_x, curr_y) = teleporter.start;
+
+    fn dfs(x: usize, y: usize, teleporter: &Teleporter, memo: &mut HashMap<Coord, usize>) -> usize {
+        if y > teleporter.max_y {
+            return 1;
+        }
+
+        if let Some(&cached) = memo.get(&(x, y)) {
+            return cached;
+        }
+
+        let mut total_paths = 0;
+
+        if let Some(splitter_xs) = teleporter.splitters.get(&y) {
+            if splitter_xs.contains(&x) {
+                // Splitter found, explore both paths
+                if x > 0 {
+                    total_paths += dfs(x - 1, y + 1, teleporter, memo);
+                }
+                total_paths += dfs(x + 1, y + 1, teleporter, memo);
+            } else {
+                // No splitter, continue straight
+                total_paths += dfs(x, y + 1, teleporter, memo);
+            }
+        } else {
+            // No splitter in this row, continue straight
+            total_paths += dfs(x, y + 1, teleporter, memo);
+        }
+
+        memo.insert((x, y), total_paths);
+        total_paths
+    }
+
+    dfs(curr_x, curr_y + 1, teleporter, &mut HashMap::new())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,5 +143,11 @@ mod tests {
     fn test_part1() {
         let teleporter = parse(INPUT);
         assert_eq!(part1(&teleporter), 21);
+    }
+
+    #[test]
+    fn test_part2() {
+        let teleporter = parse(INPUT);
+        assert_eq!(part2(&teleporter), 40);
     }
 }
