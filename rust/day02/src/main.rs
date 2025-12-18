@@ -73,7 +73,7 @@ fn is_invalid_id(num: u64, mode: &ValidationMode) -> bool {
 
     match mode {
         ValidationMode::ExactHalves => {
-            if len % 2 != 0 {
+            if !len.is_multiple_of(2) {
                 return false;
             }
 
@@ -84,7 +84,7 @@ fn is_invalid_id(num: u64, mode: &ValidationMode) -> bool {
         }
         ValidationMode::MoreThanTwiceRepetition => {
             for pattern_len in 1..=len / 2 {
-                if len % pattern_len != 0 {
+                if !len.is_multiple_of(pattern_len) {
                     continue;
                 }
 
